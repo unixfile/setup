@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# Define the username and the GitHub URL for the public key
+username="unixfile"
+github_url="https://github.com/${username}.key"
+
+# Create the .ssh directory if it doesn't exist
+mkdir -p ~/.ssh
+
+# Set the correct permissions for the .ssh directory
+chmod 700 ~/.ssh
+
+# If the authorized_keys file doesn't exist or the key is not already in the file, append it
+if [ ! -f ~/.ssh/authorized_keys ] || ! grep -qF "$(wget -q -O - "$github_url")" ~/.ssh/authorized_keys; then
+    wget -O - "$github_url" >> ~/.ssh/authorized_keys
+    echo "Public key from ${github_url} has been added to ~/.ssh/authorized_keys"
+else
+    echo "Public key from ${github_url} is already in ~/.ssh/authorized_keys"
+fi
+
+# Set the correct permissions for the authorized_keys file
+chmod 600 ~/.ssh/authorized_keys
