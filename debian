@@ -1,0 +1,59 @@
+#!/bin/sh
+
+# This script adapts the filesystem for use with TimeShift by rearranging
+# Btrfs subvolumes according to TimeShift's requirements.
+
+# Get the partition mounted at /target
+fs=$(df -P /target | awk 'NR==2 {print $1}')
+
+fs_type=$(blkid -s TYPE -o value "$fs")
+if [ "$fs_type" != "btrfs" ]; then
+  echo "Filesystem type is not btrfs, exiting."
+  exit 1
+fi
+
+# Get the UUID of the filesystem
+fs_uuid=$(blkid -s UUID -o value "$fs")
+
+# Extract the device name from the filesystem path
+dev=$(df -P | grep /target/boot | awk -F/ '{print $3}')
+dev="${dev%%[0-9]*}"
+
+# Check if the device is an HDD or SSD
+is_hdd=$(cat /sys/class/block/"$dev"/queue/rotational)
+
+# Define basic mount options for Btrfs
+mount_opts="noatime,space_cache,compress=zstd"
+
+# If the device is an SSD, add specific mount options
+if [ "$is_hdd" -eq "0" ]; then
+	mount_opts="$mount_opts,ssd,discard=async"
+fi
+
+# Unmount the target filesystem
+umount -l /target
+
+# Mount the filesystem to a temporary location
+mount "$fs" /mnt
+
+# Move the root subvolume
+mv /mnt/@rootfs /mnt/@
+
+# Create a new subvolume for /home
+btrfs subvolume create /mnt/@home
+
+# Mount the root subvolume with specific options at the target location
+mount -o subvol=@,"$mount_opts" "$fs" /target
+
+# Create the home directory
+mkdir /target/home
+
+# Mount the home subvolume with specific options
+mount -o subvol=@home,"$mount_opts" "$fs" /target/home
+
+# Remove existing entries for the filesystem and UUID in /etc/fstab
+sed -i ":^$fs:d; :^$fs_uuid:d" /target/etc/fstab
+
+# Append new fstab entries for the root and home subvolumes
+echo "UUID="$fs_uuid" /     btrfs subvol=@,"$mount_opts"     0 0" >> /target/etc/fstab
+echo "UUID="$fs_uuid" /home btrfs subvol=@home,"$mount_opts" 0 0" >> /target/etc/fstab
