@@ -3,6 +3,11 @@
 # This script adapts the filesystem for use with TimeShift by rearranging
 # Btrfs subvolumes according to TimeShift's requirements.
 
+# A Btrfs script's running, hold tight to your hat,
+# It mounts and remounts -- now what do you think of that?
+# SSDs or HDDs, no difference it sees,
+# Your `/target` is ready, and mounting's a breeze!
+
 # Get the partition mounted at /target
 fs=$(df -P /target | awk 'NR==2 {print $1}')
 
@@ -15,9 +20,10 @@ fi
 # Get the UUID of the filesystem
 fs_uuid=$(blkid -s UUID -o value "$fs")
 
-# Extract the device name from the filesystem path
-dev=$(df -P | grep /target/boot | awk -F/ '{print $3}')
-dev="${dev%%[0-9]*}"
+# Extract the device name and mount point from the filesystem path for the boot partition
+boot_fs=$(df -P | grep /target/boot | awk '{print $1}')
+boot_dir=$(df -P | grep /target/boot | awk '{print $6}')
+dev="${boot_fs%%[0-9]*}"
 
 # Check if the device is an HDD or SSD
 is_hdd=$(cat /sys/class/block/"$dev"/queue/rotational)
@@ -31,29 +37,28 @@ if [ "$is_hdd" -eq "0" ]; then
 fi
 
 # Unmount the target filesystem
-umount -l /target
+umount "$boot_dir"
+umount /target
 
 # Mount the filesystem to a temporary location
 mount "$fs" /mnt
 
 # Move the root subvolume
 mv /mnt/@rootfs /mnt/@
+btrfs subvolume create -q /mnt/@home
 
-# Create a new subvolume for /home
-btrfs subvolume create /mnt/@home
+# Unmount the temporary location
+umount /mnt
 
 # Mount the root subvolume with specific options at the target location
 mount -o subvol=@,"$mount_opts" "$fs" /target
-
-# Create the home directory
-mkdir /target/home
-
-# Mount the home subvolume with specific options
+mkdir -p /target/home
 mount -o subvol=@home,"$mount_opts" "$fs" /target/home
+mount "$boot_fs" "$boot_dir"
 
 # Remove existing entries for the filesystem and UUID in /etc/fstab
-sed -i ":^$fs:d; :^$fs_uuid:d" /target/etc/fstab
+sed -i ":^$fs:d; /^UUID=$fs_uuid/d" /target/etc/fstab
 
 # Append new fstab entries for the root and home subvolumes
-echo "UUID="$fs_uuid" /     btrfs subvol=@,"$mount_opts"     0 0" >> /target/etc/fstab
-echo "UUID="$fs_uuid" /home btrfs subvol=@home,"$mount_opts" 0 0" >> /target/etc/fstab
+echo "UUID=$fs_uuid /     btrfs subvol=@,$mount_opts     0 0" >> /target/etc/fstab
+echo "UUID=$fs_uuid /home btrfs subvol=@home,$mount_opts 0 0" >> /target/etc/fstab
