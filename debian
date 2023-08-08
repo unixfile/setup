@@ -45,7 +45,7 @@ mount "$fs" /mnt
 
 # Move the root subvolume
 mv /mnt/@rootfs /mnt/@
-btrfs subvolume create -q /mnt/@home
+btrfs subvolume create /mnt/@home
 
 # Unmount the temporary location
 umount /mnt
