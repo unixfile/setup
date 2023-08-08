@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 
 # This script adapts the filesystem for use with TimeShift by rearranging
 # Btrfs subvolumes according to TimeShift's requirements.
