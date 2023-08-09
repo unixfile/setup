@@ -24,6 +24,7 @@ fs_uuid=$(blkid -s UUID -o value "$fs")
 boot_fs=$(df -P | grep /target/boot | awk '{print $1}')
 boot_dir=$(df -P | grep /target/boot | awk '{print $6}')
 dev="${boot_fs%%[0-9]*}"
+dev=${dev##*/}
 
 # Check if the device is an HDD or SSD
 is_hdd="$(cat /sys/class/block/"$dev"/queue/rotational)"
