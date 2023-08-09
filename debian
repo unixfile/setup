@@ -23,8 +23,7 @@ fs_uuid=$(blkid -s UUID -o value "$fs")
 # Extract the device name and mount point from the filesystem path for the boot partition
 boot_fs=$(df -P | grep /target/boot | awk '{print $1}')
 boot_dir=$(df -P | grep /target/boot | awk '{print $6}')
-dev="${boot_fs%%[0-9]*}"
-dev=${dev##*/}
+dev="${boot_fs%%[0-9]*}"; dev=${dev##*/}
 
 # Check if the device is an HDD or SSD
 is_hdd="$(cat /sys/class/block/"$dev"/queue/rotational)"
@@ -34,7 +33,7 @@ mount_opts="noatime,space_cache,compress=zstd"
 
 # If the device is an SSD, add specific mount options
 if [ "$is_hdd" -eq "0" ]; then
-	mount_opts="$mount_opts,ssd,discard=async"
+  mount_opts="$mount_opts,ssd,discard=async"
 fi
 
 # Unmount the target filesystem
@@ -53,7 +52,7 @@ umount /mnt
 
 # Mount the root subvolume with specific options at the target location
 mount -o subvol=@,"$mount_opts" "$fs" /target
-mkdir -p /target/home
+mkdir -p /target/home /target/boot
 mount -o subvol=@home,"$mount_opts" "$fs" /target/home
 mount "$boot_fs" "$boot_dir"
 
