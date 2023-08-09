@@ -29,7 +29,7 @@ dev="${boot_fs%%[0-9]*}"; dev=${dev##*/}
 is_hdd="$(cat /sys/class/block/"$dev"/queue/rotational)"
 
 # Define basic mount options for Btrfs
-mount_opts="noatime,space_cache,compress=zstd"
+mount_opts="noatime,space_cache=v2,compress=zstd"
 
 # If the device is an SSD, add specific mount options
 if [ "$is_hdd" -eq "0" ]; then
