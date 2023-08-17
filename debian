@@ -1,4 +1,5 @@
 #!/bin/sh -x
+set -e
 
 # This script adapts the filesystem for use with TimeShift by rearranging
 # Btrfs subvolumes according to TimeShift's requirements.
@@ -7,6 +8,7 @@
 # It mounts and remounts -- now what do you think of that?
 # SSDs or HDDs, no difference it sees,
 # Your `/target` is ready, and mounting's a breeze!
+
 
 # Get the partition mounted at /target
 fs=$(df -P /target | awk 'NR==2 {print $1}')
@@ -57,7 +59,7 @@ mount -o subvol=@home,"$mount_opts" "$fs" /target/home
 mount "$boot_fs" "$boot_dir"
 
 # Remove existing entries for the filesystem and UUID in /etc/fstab
-sed -i ":^$fs:d; /^UUID=$fs_uuid/d" /target/etc/fstab
+sed -i ":^$fs:d; /^UUID=$fs_uuid/d; /subvol=@rootfs/d" /target/etc/fstab
 
 # Append new fstab entries for the root and home subvolumes
 echo "UUID=$fs_uuid /     btrfs subvol=@,$mount_opts     0 0" >> /target/etc/fstab
