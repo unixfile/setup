@@ -1,23 +1,28 @@
-#!/bin/bash
+#!/bin/sh
+
+# Update repositories
+sudo apt update
 
 # Broadcom check & install
 BROADCOM_ID=$(lspci -nn | grep -i "broadcom" | awk '{print $NF}' | tr -d '[]')
-if [[ "$BROADCOM_ID" =~ 14e4: ]]; then
-    sudo apt update
-    sudo apt install firmware-b43-installer
-fi
+case "$BROADCOM_ID" in
+    14e4:*)
+        sudo apt install firmware-b43-installer
+        ;;
+    *)
+        # Do nothing or handle other cases
+        ;;
+esac
 
 # Intel Wireless check & install
 INTEL_WIRELESS=$(lspci -nn | grep -i "Network controller" | grep -i "intel")
-if [[ ! -z "$INTEL_WIRELESS" ]]; then
-    sudo apt update
+if [ ! -z "$INTEL_WIRELESS" ]; then
     sudo apt install firmware-iwlwifi
 fi
 
 # NVIDIA Graphics check & install
 NVIDIA_GRAPHICS=$(lspci -nn | grep -i "VGA compatible controller" | grep -i "nvidia")
-if [[ ! -z "$NVIDIA_GRAPHICS" ]]; then
-    sudo apt update
+if [ ! -z "$NVIDIA_GRAPHICS" ]; then
     sudo apt install nvidia-driver
 fi
 
