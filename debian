@@ -10,7 +10,7 @@ set -e
 # Your `/target` is ready, and mounting's a breeze!
 
 
-# Get the partition mounted at /target
+# Get the partition that is mounted at /target
 fs=$(df -P /target | awk 'NR==2 {print $1}')
 
 fs_type=$(blkid -s TYPE -o value "$fs")
@@ -64,3 +64,10 @@ sed -i ":^$fs:d; /^UUID=$fs_uuid/d; /subvol=@rootfs/d" /target/etc/fstab
 # Append new fstab entries for the root and home subvolumes
 echo "UUID=$fs_uuid /     btrfs subvol=@,$mount_opts     0 0" >> /target/etc/fstab
 echo "UUID=$fs_uuid /home btrfs subvol=@home,$mount_opts 0 0" >> /target/etc/fstab
+
+:'
+tee /target/etc/fstab > /dev/null <<- EOF
+UUID=$fs_uuid /     btrfs subvol=@,$mount_opts     0 0
+UUID=$fs_uuid /home btrfs subvol=@home,$mount_opts 0 0
+EOF
+'
