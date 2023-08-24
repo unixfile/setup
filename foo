@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# This script is used to provide information about the current working directory
+
+# Get the current working directory
+curr_dir=$(pwd)
+
+# Get the name of the directory
+dir_name=$(basename "$curr_dir")
+
+# Get the parent directory of the current working directory
+parent_dir=$(dirname "$curr_dir")
+
+# Print the information
+echo "Current working directory: $curr_dir"
+echo "Directory name: $dir_name"
+echo "Parent directory: $parent_dir"
